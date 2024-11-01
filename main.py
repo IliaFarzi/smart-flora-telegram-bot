@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # Configuration
 class Config:
     TELEGRAM_TOKEN: str = os.getenv('TELEGRAM_TOKEN')
-    TEMP_DIR: Path = Path('temp_images')
+    TEMP_DIR: Path = Path('uploads')
     TEMP_DIR.mkdir(exist_ok=True)  # Ensure temp directory exists
 
 config = Config()
@@ -52,9 +52,10 @@ class FlowerBot:
             else:
                 response_message = (
                     f"🌱 Plant Information:\n"
-                    f"📚 Scientific Name: {plant_info['scientific_name']}\n"
-                    f"🇮🇷 Common Name: {plant_info['common_name']}\n"
+                    f"📚 Scientific Name: {plant_info['scientificName']}\n"
+                    f"🇮🇷 Common Name: {plant_info['persianCommonName']}\n"
                     f"🗒 Description: {plant_info['description']}"
+                    f"🗒 Url: {plant_info['url']}"
                 )
                 await update.message.reply_text(response_message)
 
@@ -64,7 +65,7 @@ class FlowerBot:
         except Exception as e:
             logger.error(f"Error in handle_photo: {e}")
             await update.message.reply_text(
-                "There was an error processing the image. Please try again!"
+                "متاسفانه خطایی رخ داده"
             )
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
