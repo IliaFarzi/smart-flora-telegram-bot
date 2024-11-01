@@ -1,7 +1,7 @@
 import zipfile
 import os
 from PIL import Image
-
+#T not used
 def convert_images_to_png(input_zip_path, output_zip_path):
     output_dir = 'MyFlower'
     os.makedirs(output_dir, exist_ok=True)
