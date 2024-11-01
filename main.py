@@ -75,15 +75,15 @@ class PlantDatabase:
                 if scientific_name in db_name or db_name in scientific_name:
                     return self._format_plant_info(db_name, info, number)
 
-            return f"🌱 گل شماره {number}:\n{filename}\nاطلاعات این گیاه در دیتابیس موجود نیست."
+            return f"🌱 گیاه شماره {number}:\n{filename}\nاطلاعات این گیاه در دیتابیس موجود نیست."
         except Exception as e:
             logger.error(f"Error getting plant info: {e}")
-            return f"🌱 گل شماره {number}:\n{filename}\nخطا در بازیابی اطلاعات"
+            return f"🌱 گیاه شماره {number}:\n{filename}\nخطا در بازیابی اطلاعات"
 
     @staticmethod
     def _format_plant_info(scientific_name: str, info: dict, number: int) -> str:
         return (
-            f"🌱 گل شماره {number}:\n"
+            f"🌱 گیاه شماره {number}:\n"
             f"📚 نام علمی: {scientific_name.title()}\n"
             f"🇮🇷 نام فارسی: \u200F{info['persian_name']}\n"
             f"🗒 توضیحات: \u200F{info['description']}"
@@ -113,8 +113,8 @@ class FlowerBot:
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle the /start command"""
         welcome_message = (
-            "🌸 به ربات پیشنهاد گل خوش آمدید! 🌸\n\n"
-            "یک عکس برای من بفرستید تا سه گل زیبا به شما پیشنهاد دهم!"
+            "🌸 به ربات پیشنهاد گیاه خوش آمدید! 🌸\n\n"
+            "یک عکس برای من بفرستید تا دو گیاه زیبا به شما پیشنهاد دهم!"
         )
         await update.message.reply_text(welcome_message)
 
@@ -123,10 +123,10 @@ class FlowerBot:
         try:
             flower_files = self.get_flower_photos()
             if len(flower_files) < 3:
-                await update.message.reply_text("تعداد گل‌های موجود در مجموعه کافی نیست!")
+                await update.message.reply_text("تعداد گیاه‌های موجود در مجموعه کافی نیست!")
                 return
 
-            await update.message.reply_text("✨ گل‌های پیشنهادی من برای شما: ✨")
+            await update.message.reply_text("✨ گیاه‌های پیشنهادی من برای شما: ✨")
 
             selected_flowers = random.sample(flower_files, 2)
             for i, flower in enumerate(selected_flowers, 1):
@@ -147,7 +147,7 @@ class FlowerBot:
         except Exception as e:
             logger.error(f"Error in handle_photo: {e}")
             await update.message.reply_text(
-                "متأسفانه در نمایش گل‌ها مشکلی پیش آمد. لطفاً دوباره تلاش کنید!"
+                "متأسفانه در نمایش گیاه‌ها مشکلی پیش آمد. لطفاً دوباره تلاش کنید!"
             )
 
 
@@ -174,11 +174,11 @@ def main() -> None:
         app.add_error_handler(error_handler)
 
         # Print startup information
-        print("در حال شروع ربات پیشنهاد گل...")
-        print(f"مسیر پوشه گل‌ها: {config.FLOWERS_DIR}")
+        print("در حال شروع ربات پیشنهاد گیاه...")
+        print(f"مسیر پوشه گیاه‌ها: {config.FLOWERS_DIR}")
         print(f"مسیر فایل CSV: {config.CSV_FILE}")
         print(f"تعداد گیاهان در دیتابیس: {len(bot.plant_db.plants)}")
-        print(f"تعداد عکس‌های گل: {len(bot.get_flower_photos())}")
+        print(f"تعداد عکس‌های گیاه: {len(bot.get_flower_photos())}")
 
         # Start the bot
         app.run_polling(allowed_updates=Update.ALL_TYPES)
