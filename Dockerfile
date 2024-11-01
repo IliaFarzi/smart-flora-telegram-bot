@@ -1,9 +1,6 @@
 # Use official Python images from Docker Hub
 FROM python:3.10-slim
 
-# Set working directory
-WORKDIR /app
-
 # Copy only requirements file first for efficient caching
 COPY requirements.txt requirements.txt
 
@@ -12,7 +9,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the entire app
 COPY images images
-
 
 COPY plants.csv plants.csv
 

@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from dataclasses import dataclass
 import logging
+import asyncio
 
 # Load environment variables
 load_dotenv()
@@ -26,8 +27,8 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Config:
     TELEGRAM_TOKEN: str = os.getenv('TELEGRAM_TOKEN')
-    FLOWERS_DIR: Path = Path('flowers')
-    CSV_FILE: Path = Path('flowers/plants.csv')
+    FLOWERS_DIR: Path = Path('images')
+    CSV_FILE: Path = Path('plants.csv')
     VALID_EXTENSIONS: set = frozenset({'.jpg', '.jpeg', '.png'})
 
 
@@ -83,9 +84,9 @@ class PlantDatabase:
     def _format_plant_info(scientific_name: str, info: dict, number: int) -> str:
         return (
             f"🌱 گل شماره {number}:\n"
-            f"نام علمی: {scientific_name.title()}\n"
-            f"نام فارسی: {info['persian_name']}\n"
-            f"توضیحات: {info['description']}"
+            f"📚 نام علمی: {scientific_name.title()}\n"
+            f"🇮🇷 نام فارسی: \u200F{info['persian_name']}\n"
+            f"🗒 توضیحات: \u200F{info['description']}"
         )
 
 
@@ -127,12 +128,14 @@ class FlowerBot:
 
             await update.message.reply_text("✨ گل‌های پیشنهادی من برای شما: ✨")
 
-            selected_flowers = random.sample(flower_files, 3)
+            selected_flowers = random.sample(flower_files, 2)
             for i, flower in enumerate(selected_flowers, 1):
                 file_path = self.flowers_dir / flower
                 caption = self.plant_db.get_plant_info(flower, i)
 
                 try:
+                    # Introduce a random delay between 3 and 7 seconds before sending each image
+                    await asyncio.sleep(random.uniform(2, 5))
                     with open(file_path, 'rb') as photo_file:
                         await update.message.reply_photo(photo=photo_file, caption=caption)
                 except Exception as e:
@@ -162,7 +165,8 @@ def main() -> None:
     try:
         # Initialize the bot
         bot = FlowerBot()
-        app = Application.builder().token(config.TELEGRAM_TOKEN).build()
+        app = (Application.builder().pool_timeout(1200).read_timeout(1200).write_timeout(1200).connect_timeout(1200)
+               ).token(config.TELEGRAM_TOKEN).build()
 
         # Add handlers
         app.add_handler(CommandHandler("start", bot.start_command))
@@ -178,7 +182,7 @@ def main() -> None:
 
         # Start the bot
         app.run_polling(allowed_updates=Update.ALL_TYPES)
-
+        logger.info(config.TELEGRAM_TOKEN)
     except Exception as e:
         logger.critical(f"Critical error starting bot: {e}")
         print(f"خطای بحرانی در اجرای ربات: {e}")
