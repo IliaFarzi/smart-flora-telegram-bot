@@ -1,3 +1,4 @@
+import base64
 import os
 import requests
 from dotenv import load_dotenv
@@ -30,11 +31,12 @@ class MetisUploader:
         try:
             # Open file in binary mode for upload
             with open(file_path, "rb") as file:
+                encoded_file = base64.b64encode(file.read()).decode('utf-8')#for uploding to openai
                 headers = {
                     "Authorization": f"Bearer {self.metis_api_key}"
                 }
                 files = {
-                    "files": file
+                    "files": encoded_file
                 }
 
                 logger.info(f"Uploading file: {file_path}")
@@ -64,7 +66,7 @@ class MetisUploader:
 if __name__ == "__main__":
     uploader = MetisUploader()
     # Make sure the file path exists in the upload folder
-    file_path = os.path.join("uploads", "Codiaeum variegatum.png")  # Replace 'your_file.jpg' with your actual file name
+    file_path = os.path.join("uploads", "photo_5846132522528916670_y.jpg")  # Replace 'your_file.jpg' with your actual file name
     file_url = uploader.upload_file(file_path)
 
     if file_url:
