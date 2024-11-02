@@ -1,3 +1,4 @@
+import logging
 import os
 import requests
 from dotenv import load_dotenv
@@ -5,6 +6,13 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+
+# Set up logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 class Model:
     def __init__(self):
@@ -24,14 +32,14 @@ class Model:
                 response = requests.post(self.storage_endpoint, headers=headers, files=files)
                 if response.status_code == 200:
                     image_url = response.json().get("url")
-                    print(f"Image uploaded successfully: {image_url}")
+                    logger.info(f"Image uploaded successfully: {image_url}")
                     return image_url
                 else:
-                    print(f"Image upload failed with status {response.status_code}: {response.text}")
+                    logger.error(f"Image upload failed with status {response.status_code}: {response.text}")
                     return ""
 
         except Exception as e:
-            print(f"Error uploading image: {e}")
+            logger.error(f"Error uploading image: {e}")
             return ""
 
     def analyze_image(self, image_url: str):
@@ -65,7 +73,7 @@ class Model:
             "}"
         )
         uploaded_image = self.upload_image(image_url)
-        print(uploaded_image)
+        logger.info(uploaded_image)
         data = {
             "model": "gpt-4o",
             "prompt": prompt,
@@ -92,11 +100,11 @@ class Model:
                 # Return list of plants if valid data is received
                 return {"plants": response_data.get("plants", []), "error":"null"}
             else:
-                print(f"Error from Metis API: {response.status_code} - {response.text}")
+                logger.error(f"Error from Metis API: {response.status_code} - {response.text}")
                 return {"error": "Unable to retrieve plant recommendations at this time.", 'plants': []}
 
         except Exception as e:
-            print(f"Error processing image with Metis API: {e}")
+            logger.error(f"Error processing image with Metis API: {e}")
             return {'error': "Unable to retrieve plant recommendations due to an error.", 'plants': []}
 
 
