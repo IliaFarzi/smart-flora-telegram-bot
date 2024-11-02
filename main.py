@@ -1,5 +1,5 @@
 import logging
-from telegram import Update, InputFile
+from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from pathlib import Path
 import os
