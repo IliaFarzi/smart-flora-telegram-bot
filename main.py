@@ -46,18 +46,19 @@ class FlowerBot:
             await file.download_to_drive(file_path)
 
             # Use GPT-4 to analyze the image and get plant info
-            plant_info = self.recommendation_service.analyze_image(str(file_path))
-            if "error" in plant_info:
-                await update.message.reply_text(plant_info["error"])
+            plants_info = self.recommendation_service.analyze_image(str(file_path))
+            if "error" in plants_info and "error" != "null":
+                await update.message.reply_text(plants_info["error"])
             else:
-                response_message = (
-                    f"🌱 Plant Information:\n"
-                    f"📚 Scientific Name: {plant_info['scientificName']}\n"
-                    f"🇮🇷 Common Name: {plant_info['persianCommonName']}\n"
-                    f"🗒 Description: {plant_info['description']}"
-                    f"🗒 Url: {plant_info['url']}"
-                )
-                await update.message.reply_text(response_message)
+                for item in plants_info['plants']:
+                    response_message = (
+                        f"🌱 Plant Information:\n"
+                        f"📚 Scientific Name: {item['scientificName']}\n"
+                        f"🇮🇷 Common Name: {item['persianCommonName']}\n"
+                        f"🗒 Description: {item['description']}"
+                        f"🗒 Url: {item['url']}"
+                    )
+                    await update.message.reply_text(response_message)
 
             # Optionally delete the image after processing
             file_path.unlink(missing_ok=True)
