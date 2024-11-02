@@ -1,7 +1,6 @@
 import os
 import requests
 from dotenv import load_dotenv
-from typing import List, Dict
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,8 +21,7 @@ class Model:
                 files = {"file": image_file}
 
                 # Send the request to upload the image
-                response = requests.post(self.storage_endpoint, headers=headers, files=files,verify=False)
-
+                response = requests.post(self.storage_endpoint, headers=headers, files=files)
                 if response.status_code == 200:
                     image_url = response.json().get("url")
                     print(f"Image uploaded successfully: {image_url}")
@@ -36,7 +34,7 @@ class Model:
             print(f"Error uploading image: {e}")
             return ""
 
-    def analyze_image(self, image_url: str) -> List[Dict[str, str]]:
+    def analyze_image(self, image_url: str):
         """Send the image URL to Metis API for plant analysis and get recommendations."""
         prompt = (
             "1. *Analyze* the provided image to evaluate the lighting conditions and available space.\n"
@@ -87,18 +85,18 @@ class Model:
 
                 # Check for error in the response
                 if response_data.get("error") == "badImage":
-                    return [{"error": "Please provide clearer images of your space."}]
+                    return {"error": "Please provide clearer images of your space.", 'plants': []}
                 elif not response_data.get("plants"):
-                    return [{"error": "No suitable plants found for the provided image."}]
+                    return {"error": "No suitable plants found for the provided image.", 'plants': []}
 
                 # Return list of plants if valid data is received
-                return response_data.get("plants", [])
+                return {"plants": response_data.get("plants", []), "error":"null"}
             else:
                 print(f"Error from Metis API: {response.status_code} - {response.text}")
-                return [{"error": "Unable to retrieve plant recommendations at this time."}]
+                return {"error": "Unable to retrieve plant recommendations at this time.", 'plants': []}
 
         except Exception as e:
             print(f"Error processing image with Metis API: {e}")
-            return [{"error": "Unable to retrieve plant recommendations due to an error."}]
+            return {'error': "Unable to retrieve plant recommendations due to an error.", 'plants': []}
 
 
