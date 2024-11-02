@@ -6,13 +6,18 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-
 # Set up logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+# Iranian proxy settings
+PROXY = {
+    "http": "http://80.249.112.162:80",
+    "https": "http://80.249.112.162:80"
+}
 
 class Model:
     def __init__(self):
@@ -28,8 +33,8 @@ class Model:
                 headers = {"Authorization": f"Bearer {self.metis_api_key}"}
                 files = {"file": image_file}
 
-                # Send the request to upload the image
-                response = requests.post(self.storage_endpoint, headers=headers, files=files)
+                # Send the request to upload the image through the proxy
+                response = requests.post(self.storage_endpoint, headers=headers, files=files, proxies=PROXY)
                 if response.status_code == 200:
                     image_url = response.json().get("url")
                     logger.info(f"Image uploaded successfully: {image_url}")
@@ -86,7 +91,8 @@ class Model:
             "Content-Type": "application/json"
         }
         try:
-            response = requests.post(self.wrapper_endpoint, headers=headers, data=data)
+            # Send the analysis request through the proxy
+            response = requests.post(self.wrapper_endpoint, headers=headers, json=data, proxies=PROXY)
 
             if response.status_code == 200:
                 response_data = response.json()
@@ -106,5 +112,3 @@ class Model:
         except Exception as e:
             logger.error(f"Error processing image with Metis API: {e}")
             return {'error': "Unable to retrieve plant recommendations due to an error.", 'plants': []}
-
-
