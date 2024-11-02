@@ -31,12 +31,12 @@ class Model:
         try:
             with open(image_path, "rb") as image_file:
                 headers = {"Authorization": f"Bearer {self.metis_api_key}"}
-                files = {"file": image_file}
+                files = {"files": image_file}
 
                 # Send the request to upload the image through the proxy
                 response = requests.post(self.storage_endpoint, headers=headers, files=files, proxies=PROXY)
                 if response.status_code == 200:
-                    image_url = response.json().get("url")
+                    image_url = response.json()['files'][0]['url']
                     logger.info(f"Image uploaded successfully: {image_url}")
                     return image_url
                 else:
