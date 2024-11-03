@@ -53,6 +53,7 @@ class FlowerBot:
             if "error" in plants_info and "error" != "null":
                 await update.message.reply_text(plants_info["error"])
             else:
+                logger.info(plants_info['plants'])
                 for item in plants_info['plants']:
                     response_message = (
                         f"🌱 Plant Information:\n"
@@ -60,6 +61,7 @@ class FlowerBot:
                         f"🇮🇷 Common Name: {item['persianCommonName']}\n"
                         f"🗒 Description: {item['description']}"
                     )
+                    logger.info(response_message)
                     await update.message.reply_text(response_message)
 
             # Optionally delete the image after processing
