@@ -23,6 +23,7 @@ class Config:
     TEMP_DIR: Path = Path('uploads')
     PUBLIC_DIR: Path = Path('public')
     TEMP_DIR.mkdir(exist_ok=True)  # Ensure temp directory exists
+    DEFAULT_IMAGE_PATH = Path('public') / "default.png"
 
 
 config = Config()
@@ -44,8 +45,9 @@ class FlowerBot:
 
     async def handle_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle received photos"""
-        # Send waiting message
 
+        # Send a waiting message to inform the user about the ongoing analysis
+        await update.message.reply_text("⏳ در حال پردازش تصویر شما...\nلطفاً چند لحظه صبر کنید.")
 
         try:
             # Download the user's photo
@@ -62,8 +64,10 @@ class FlowerBot:
             # Use the API to analyze the image and get plant info
             plants_info = self.recommendation_service.analyze_image(uploaded_path)
 
+            if plants_info['error'] is not None:
+                raise Exception(plants_info['error'])
+
             # Prepare the caption for the default image
-            captions = []
             for item in plants_info['plants']:
                 response_message = (
                     f"🪴 اطلاعات گیاه پیشنهادی:\n"
@@ -71,17 +75,15 @@ class FlowerBot:
                     f"🌿 نام فارسی: {item['persianCommonName']}\n"
                     f"📝 توضیحات: {item['description']}"
                 )
-                captions.append(response_message)
-
-            # Send the default image with the plant info as the caption
-            default_image_path = config.PUBLIC_DIR / "default.png"
-            if default_image_path.exists():
-                await update.message.reply_photo(
-                    photo=InputFile(default_image_path),
-                    caption="\n\n" + "➖" * 20 + "\n\n".join(captions)
-                )
-            else:
-                await update.message.reply_text("\n\n" + "➖" * 20 + "\n\n".join(captions))
+                # Send the default image with the plant info as the caption
+                if config.DEFAULT_IMAGE_PATH.exists():
+                    with config.DEFAULT_IMAGE_PATH.open("rb") as image_file:  # Open the file in binary mode
+                        await update.message.reply_photo(
+                            photo=InputFile(image_file),
+                            caption=response_message
+                        )
+                else:
+                    await update.message.reply_text(response_message)
 
         except Exception as e:
             logger.error(f"Error in handle_photo: {e}")
