@@ -45,10 +45,7 @@ class FlowerBot:
     async def handle_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle received photos"""
         # Send waiting message
-        waiting_message = await update.message.reply_text(
-            "🔍 در حال بررسی تصویر و انتخاب بهترین گیاهان مناسب...\n"
-            "🙏 لطفاً کمی صبر کنید"
-        )
+
 
         try:
             # Download the user's photo
@@ -59,30 +56,11 @@ class FlowerBot:
             uploaded_path = self.uploader_service.upload_file(str(file_path))
 
             if not uploaded_path:
-                await waiting_message.edit_text("❌ متأسفانه در آپلود تصویر مشکلی پیش آمده\n🙏 لطفاً دوباره تلاش کنید")
+                await update.message.reply_text("❌ متأسفانه در آپلود تصویر مشکلی پیش آمده\n🙏 لطفاً دوباره تلاش کنید")
                 return
 
             # Use the API to analyze the image and get plant info
             plants_info = self.recommendation_service.analyze_image(uploaded_path)
-
-            if plants_info.get("error"):
-                error_messages = {
-                    "Invalid response format": "❌ متأسفانه در پردازش تصویر مشکلی پیش آمده\n🙏 لطفاً دوباره تلاش کنید",
-                    "Please provide clearer images of your space": "📸 لطفاً یک تصویر واضح‌تر از فضای مورد نظر ارسال کنید",
-                    "Unable to retrieve plant recommendations at this time": "⚠️ در حال حاضر سیستم قادر به پاسخگویی نیست\n🙏 لطفاً دقایقی دیگر تلاش کنید",
-                    "An unexpected error occurred during processing": "❌ متأسفانه خطایی رخ داده\n🙏 لطفاً دوباره تلاش کنید"
-                }
-                await waiting_message.edit_text(
-                    error_messages.get(plants_info["error"], "❌ متأسفانه خطایی رخ داده\n🙏 لطفاً دوباره تلاش کنید"))
-                return
-
-            if not plants_info.get("plants"):
-                await waiting_message.edit_text(
-                    "⚠️ متأسفانه نتوانستم گیاه مناسبی برای این فضا پیدا کنم\n🌱 لطفاً تصویر دیگری ارسال کنید")
-                return
-
-            # Delete waiting message
-            await waiting_message.delete()
 
             # Prepare the caption for the default image
             captions = []
@@ -107,7 +85,7 @@ class FlowerBot:
 
         except Exception as e:
             logger.error(f"Error in handle_photo: {e}")
-            await waiting_message.edit_text(
+            await update.message.reply_text(
                 "❌ متأسفانه خطایی رخ داده\n"
                 "🙏 لطفاً دوباره تلاش کنید"
             )
