@@ -88,7 +88,7 @@ class MetisSuggestion:
             "  ],\n"
             "  \"error\": null\n"
             "}"
-            "   - *Note:* response is invalid if it is wrapped in ```{any language}```"
+            "   - *critical note:* response is invalid if it is wrapped in ```{any language}```, and some thing like ```json``` should not be used in response"
 
         )
 
@@ -162,6 +162,6 @@ if __name__ == "__main__":
     if image_url:
         suggestion = MetisSuggestion()
         res = suggestion.analyze_image(image_url)
-        print(res)
+        print(res['plants'], res['plants'][0])
     else:
         print("Image upload failed.")
