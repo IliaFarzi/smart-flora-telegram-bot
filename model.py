@@ -12,6 +12,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Proxy settings for Iranian networks
+PROXY = {
+    "http": "http://80.249.112.162:80",
+    "https": "http://80.249.112.162:80"
+}
 
 class MetisUploader:
     def __init__(self):
@@ -36,7 +41,7 @@ class MetisUploader:
                     "files": file,
                 }
 
-                response = requests.post(self.storage_endpoint, headers=headers, files=files)
+                response = requests.post(self.storage_endpoint, headers=headers, files=files, proxies=PROXY)
 
                 if response.status_code == 200:
                     response_data = response.json()
@@ -103,7 +108,7 @@ class MetisSuggestion:
 
         try:
             # Initiate session
-            session_response = requests.post(self.wrapper_endpoint, headers=headers, json=session_data)
+            session_response = requests.post(self.wrapper_endpoint, headers=headers, json=session_data, proxies=PROXY)
             session_response.raise_for_status()
             session_id = session_response.json()['id']
             if not session_id:
@@ -125,7 +130,7 @@ class MetisSuggestion:
 
             response = requests.post(
                 f'https://api.metisai.ir/api/v1/chat/session/{session_id}/message',
-                headers=headers, json=data
+                headers=headers, json=data, proxies=PROXY
             )
             response.raise_for_status()
 

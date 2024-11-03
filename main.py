@@ -64,6 +64,9 @@ class FlowerBot:
             # Use the API to analyze the image and get plant info
             plants_info = self.recommendation_service.analyze_image(uploaded_path)
 
+            if plants_info['error'] is not None:
+                raise Exception(plants_info['error'])
+
             # Prepare the caption for the default image
             for item in plants_info['plants']:
                 response_message = (
