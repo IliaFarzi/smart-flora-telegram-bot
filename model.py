@@ -4,9 +4,7 @@ import requests
 from dotenv import load_dotenv
 import logging
 
-# Load environment variables from .env file
 load_dotenv()
-
 # Configure logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -14,16 +12,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Proxy settings for Iranian networks
-PROXY = {
-    "http": "http://80.249.112.162:80",
-    "https": "http://80.249.112.162:80"
-}
 
 class MetisUploader:
     def __init__(self):
         self.metis_api_key = os.getenv('METIS_API_KEY')
-        self.storage_endpoint = "https://api.metisai.ir/api/v1/storage"  # Metis storage API endpoint
+        self.storage_endpoint = "https://api.metisai.ir/api/v1/storage"
         if not self.metis_api_key:
             logger.error("Metis API key is missing. Please check your .env file.")
             raise ValueError("Metis API key is missing.")
@@ -35,7 +28,6 @@ class MetisUploader:
             return ""
 
         try:
-            # Open file in binary mode for upload
             with open(file_path, "rb") as file:
                 headers = {
                     "Authorization": f"Bearer {self.metis_api_key}"
@@ -46,7 +38,6 @@ class MetisUploader:
 
                 response = requests.post(self.storage_endpoint, headers=headers, files=files)
 
-                # Check if the upload was successful
                 if response.status_code == 200:
                     response_data = response.json()
                     file_url = response_data['files'][0]['url']
@@ -63,11 +54,12 @@ class MetisUploader:
             logger.error(f"Request exception during file upload: {e}")
             return ""
 
+
 class MetisSuggestion:
     def __init__(self):
         self.metis_api_key = os.getenv('METIS_API_KEY')
         self.metis_bot_id = os.getenv('METIS_BOT_ID')
-        self.wrapper_endpoint = "https://api.metisai.ir/api/v1/chat/session"  # Wrapper endpoint for image processing
+        self.wrapper_endpoint = "https://api.metisai.ir/api/v1/chat/session"
         if not self.metis_api_key:
             logger.error("Metis API key is missing. Please check your .env file.")
             raise ValueError("Metis API key is missing.")
@@ -96,10 +88,10 @@ class MetisSuggestion:
             "  ],\n"
             "  \"error\": null\n"
             "}"
-            "   - *Note:* we use your should be parseable as json file without ```json```"
+            "   - *Note:* response is invalid if it is wrapped in ```{any language}```"
 
         )
-        # Set up the initial session data
+
         session_data = {
             "botId": self.metis_bot_id,
             "user": None,
@@ -112,11 +104,12 @@ class MetisSuggestion:
         try:
             # Initiate session
             session_response = requests.post(self.wrapper_endpoint, headers=headers, json=session_data)
-            session_response.raise_for_status()  # Raise exception if the request was unsuccessful
+            session_response.raise_for_status()
             session_id = session_response.json()['id']
             if not session_id:
                 logger.error("Session ID not returned in response.")
                 return {"error": "Unable to initiate Metis session.", "plants": []}
+
             data = {
                 "message": {
                     "type": "USER",
@@ -129,25 +122,30 @@ class MetisSuggestion:
                     ]
                 }
             }
-            # Send the image for analysis
+
             response = requests.post(
                 f'https://api.metisai.ir/api/v1/chat/session/{session_id}/message',
                 headers=headers, json=data
             )
-            response.raise_for_status()  # Raise an exception if the request failed
+            response.raise_for_status()
 
             response_data = response.json()
 
-            # Check the 'choices' and extract the plant data
-            plant_object = json.loads(response_data['content']) or {'error': 'noPlant', 'plants': []}
+            try:
+                # Try to parse the content as JSON
+                plant_object = json.loads(response_data['content'])
+            except (json.JSONDecodeError, TypeError):
+                logger.error(f"Invalid JSON response: {response_data['content']}")
+                return {"error": "Invalid response format", "plants": []}
 
-            # Validate and return response
-            if isinstance(plant_object, str) or 'error' in plant_object and plant_object['error'] == "badImage":
-                return {"error": "Please provide clearer images of your space.", "plants": []}
-            elif not plant_object.get('plants'):
-                return {"error": "No suitable plants found for the provided image.", "plants": []}
+            # Validate response format
+            if isinstance(plant_object, dict):
+                if "error" in plant_object and plant_object["error"] == "badImage":
+                    return {"error": "Please provide clearer images of your space.", "plants": []}
+                elif "plants" in plant_object:
+                    return {"plants": plant_object["plants"], "error": None}
 
-            return {"plants": json.loads(plant_object.get("plants", "[]")), "error": None}
+            return {"error": "Invalid response format", "plants": []}
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Request failed: {e}")
