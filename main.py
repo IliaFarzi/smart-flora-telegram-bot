@@ -1,5 +1,5 @@
 import logging
-from telegram import Update
+from telegram import Update, InputFile
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from pathlib import Path
 import os
@@ -50,10 +50,11 @@ class FlowerBot:
 
             # Use GPT-4 to analyze the image and get plant info
             plants_info = self.recommendation_service.analyze_image(uploaded_path)
-            if "error" in plants_info and "error" != "null":
+            if "error" in plants_info and plants_info["error"] != "null":
                 await update.message.reply_text(plants_info["error"])
             else:
-                logger.info(plants_info['plants'])
+                # Prepare the caption for the default image
+                captions = []
                 for item in plants_info['plants']:
                     response_message = (
                         f"🌱 Plant Information:\n"
@@ -61,8 +62,12 @@ class FlowerBot:
                         f"🇮🇷 Common Name: {item['persianCommonName']}\n"
                         f"🗒 Description: {item['description']}"
                     )
-                    logger.info(response_message)
-                    await update.message.reply_text(response_message)
+                    captions.append(response_message)
+
+                # Send the default image with the plant info as the caption
+                default_image_path = config.PUBLIC_DIR / "default.png"
+                if default_image_path.exists():
+                    await update.message.reply_photo(photo=InputFile(default_image_path), caption="\n\n".join(captions))
 
             # Optionally delete the image after processing
             file_path.unlink(missing_ok=True)

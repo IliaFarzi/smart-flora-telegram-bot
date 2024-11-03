@@ -147,7 +147,7 @@ class MetisSuggestion:
             elif not plant_object.get('plants'):
                 return {"error": "No suitable plants found for the provided image.", "plants": []}
 
-            return {"plants": plant_object.get("plants", []), "error": None}
+            return {"plants": json.loads(plant_object.get("plants", [])), "error": None}
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Request failed: {e}")
