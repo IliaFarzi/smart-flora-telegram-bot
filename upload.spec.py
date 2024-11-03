@@ -1,4 +1,3 @@
-import base64
 import os
 import requests
 from dotenv import load_dotenv
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 class MetisUploader:
     def __init__(self):
         self.metis_api_key = os.getenv('METIS_API_KEY')
-        self.storage_endpoint = "https://api.metisai.ir/api/v1/storage"  # Metis storage API endpoint
+        self.storage_endpoint = "https://api.metisai.ir/openai/v1/files"  # Metis storage API endpoint
         if not self.metis_api_key:
             logger.error("Metis API key is missing. Please check your .env file.")
             raise ValueError("Metis API key is missing.")
@@ -31,12 +30,12 @@ class MetisUploader:
         try:
             # Open file in binary mode for upload
             with open(file_path, "rb") as file:
-                encoded_file = base64.b64encode(file.read()).decode('utf-8')#for uploding to openai
                 headers = {
                     "Authorization": f"Bearer {self.metis_api_key}"
                 }
                 files = {
-                    "files": encoded_file
+                    "file": file,
+                    "purpose": 'vision'
                 }
 
                 logger.info(f"Uploading file: {file_path}")
