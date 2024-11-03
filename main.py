@@ -4,7 +4,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-from model import Model
+from model import MetisUploader, MetisSuggestion
 
 # Load environment variables
 load_dotenv()
@@ -20,13 +20,15 @@ logger = logging.getLogger(__name__)
 class Config:
     TELEGRAM_TOKEN: str = os.getenv('TELEGRAM_TOKEN')
     TEMP_DIR: Path = Path('uploads')
+    PUBLIC_DIR: Path = Path('public')
     TEMP_DIR.mkdir(exist_ok=True)  # Ensure temp directory exists
 
 config = Config()
 
 class FlowerBot:
     def __init__(self):
-        self.recommendation_service = Model()
+        self.recommendation_service = MetisSuggestion()
+        self.uploader_service = MetisUploader()
 
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle the /start command"""
@@ -44,9 +46,10 @@ class FlowerBot:
             file = await photo.get_file()
             file_path = config.TEMP_DIR / f"{file.file_id}.jpg"
             await file.download_to_drive(file_path)
+            uploaded_path = self.uploader_service.upload_file(str(file_path))
 
             # Use GPT-4 to analyze the image and get plant info
-            plants_info = self.recommendation_service.analyze_image(str(file_path))
+            plants_info = self.recommendation_service.analyze_image(uploaded_path)
             if "error" in plants_info and "error" != "null":
                 await update.message.reply_text(plants_info["error"])
             else:
@@ -56,7 +59,6 @@ class FlowerBot:
                         f"📚 Scientific Name: {item['scientificName']}\n"
                         f"🇮🇷 Common Name: {item['persianCommonName']}\n"
                         f"🗒 Description: {item['description']}"
-                        f"🗒 Url: {item['url']}"
                     )
                     await update.message.reply_text(response_message)
 
