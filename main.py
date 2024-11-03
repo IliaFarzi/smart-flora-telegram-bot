@@ -76,10 +76,11 @@ class FlowerBot:
             # Send the default image with the plant info as the caption
             default_image_path = config.PUBLIC_DIR / "default.png"
             if default_image_path.exists():
-                await update.message.reply_photo(
-                    photo=InputFile(default_image_path),
-                    caption="\n\n" + "➖" * 20 + "\n\n".join(captions)
-                )
+                with default_image_path.open("rb") as image_file:  # Open the file in binary mode
+                    await update.message.reply_photo(
+                        photo=InputFile(image_file),
+                        caption="\n\n" + "➖" * 20 + "\n\n".join(captions)
+                    )
             else:
                 await update.message.reply_text("\n\n" + "➖" * 20 + "\n\n".join(captions))
 

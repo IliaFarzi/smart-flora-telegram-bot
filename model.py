@@ -162,6 +162,6 @@ if __name__ == "__main__":
     if image_url:
         suggestion = MetisSuggestion()
         res = suggestion.analyze_image(image_url)
-        print(res['plants'], res['plants'][0])
+        print(res)
     else:
         print("Image upload failed.")
