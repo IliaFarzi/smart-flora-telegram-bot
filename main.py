@@ -40,23 +40,24 @@ class FlowerBot:
         welcome_message = (
             "🌸 به ربات پیشنهاد گیاهان خوش آمدید! 🌸\n\n"
             "🌿 کافیه یک عکس از فضای مورد نظرتون برای قرار دادن گیاه ارسال کنید\n"
-            "من بهترین پیشنهادها رو براتون آماده می‌کنم! 🪴\n"
-            "ابتدا شهرتون انتخاب کنید:"
-        )
+            "من بهترین پیشنهادها رو براتون آماده می‌کنم! 🪴")
         await update.message.reply_text(welcome_message)
+
+    async def city_change_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle the /city_hange command"""
+        await start_city_selection(update, context)
 
     async def handle_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle received photos"""
-        # Ensure the user has selected a city first
+        # Check if the user has selected a city
         if 'selected_city' not in context.user_data:
             await update.message.reply_text("❌ لطفاً شهرتون انتخاب کنید!")
             await start_city_selection(update, context)
             return
 
-        # Proceed with photo handling logic
         selected_city = context.user_data['selected_city']
-        await update.message.reply_text(f"شهر انتخابی شما: {city_mapper.get_farsi_name(selected_city)}\n⏳ در حال پردازش تصویر شما...")
-
+        await update.message.reply_text(
+            f"شهر انتخابی شما: {city_mapper.get_farsi_name(selected_city)}\n⏳ در حال پردازش تصویر شما...")
 
         try:
             # Download the user's photo
@@ -71,7 +72,7 @@ class FlowerBot:
                 return
 
             # Use the API to analyze the image and get plant info
-            plants_info = self.recommendation_service.analyze_image(uploaded_path , selected_city)
+            plants_info = self.recommendation_service.analyze_image(uploaded_path, selected_city)
 
             if plants_info['error'] is not None:
                 raise Exception(plants_info['error'])
@@ -105,6 +106,9 @@ class FlowerBot:
             if 'file_path' in locals():
                 file_path.unlink(missing_ok=True)
 
+            # Ensure that the bot is ready for the next interaction (commands or messages)
+            await update.message.reply_text("🛠️ آماده دریافت دستور جدید.")
+
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle errors in the bot"""
@@ -129,6 +133,7 @@ def main() -> None:
 
         # Add handlers
         app.add_handler(CommandHandler("start", bot.start_command))
+        app.add_handler(CommandHandler("city", bot.city_change_command))
         app.add_handler(CallbackQueryHandler(handle_city_selection, pattern="^(city_page:|select_city:)"))
         app.add_handler(MessageHandler(filters.PHOTO, bot.handle_photo))
         app.add_error_handler(error_handler)
