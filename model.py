@@ -71,14 +71,14 @@ class MetisSuggestion:
             logger.error("Metis Bot ID is missing. Please check your .env file.")
             raise ValueError("Metis Bot ID is missing.")
 
-    def analyze_image(self, image_url: str):
+    def analyze_image(self, image_url: str,selected_city: str):
         """Send the image URL to Metis API for plant analysis and get recommendations."""
         prompt = (
             "According to the provided image's lighting conditions and available space, "
             "recommend two indoor plants based on these criteria:\n"
-            "1. Plants should be easy to find and not rare.\n"
-            "2. Plants should be suitable for indoor environments and compatible with Tehran's climate.\n"
-            "3. Avoid recommending any illegal plants.\n\n"
+            # "1. Plants should be easy to find and not rare.\n"
+            f"1. Plants should be suitable for indoor environments and compatible with {selected_city}'s climate and regeonal biomes.\n"
+            "2. Avoid recommending any illegal plants.\n\n"
             "Output in JSON format with the following structure:\n"
             "   - *Note:* If the image is other than a place where a plant can be placed, "
             "you should return {\"error\": \"badImage\", \"plants\":[] }.\n\n"
@@ -87,7 +87,7 @@ class MetisSuggestion:
             "    {\n"
             "      \"scientificName\": \"Example plant name\",\n"
             "      \"persianCommonName\": \"اسم فارسی\",\n"
-            "      \"description\": \"Detailed care instructions in Persian.\""
+            "      \"description\": \"Detailed care instructions in Persian. and some clause on why this plant is suitable for situation\""
             "    }\n"
             "  ],\n"
             "  \"error\": null\n"
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     image_url = uploader.upload_file('uploads/photo_5846132522528916670_y.jpg')
     if image_url:
         suggestion = MetisSuggestion()
-        res = suggestion.analyze_image(image_url)
+        res = suggestion.analyze_image(image_url, 'Tehran')
         print(res)
     else:
         print("Image upload failed.")

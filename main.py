@@ -1,10 +1,11 @@
 import logging
 from telegram import Update, InputFile
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from pathlib import Path
 import os
 from dotenv import load_dotenv
 from model import MetisUploader, MetisSuggestion
+from city import start_city_selection, handle_city_selection, city_mapper
 
 # Load environment variables
 load_dotenv()
@@ -39,15 +40,23 @@ class FlowerBot:
         welcome_message = (
             "🌸 به ربات پیشنهاد گیاهان خوش آمدید! 🌸\n\n"
             "🌿 کافیه یک عکس از فضای مورد نظرتون برای قرار دادن گیاه ارسال کنید\n"
-            "من بهترین پیشنهادها رو براتون آماده می‌کنم! 🪴"
+            "من بهترین پیشنهادها رو براتون آماده می‌کنم! 🪴\n"
+            "ابتدا شهرتون انتخاب کنید:"
         )
         await update.message.reply_text(welcome_message)
 
     async def handle_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle received photos"""
+        # Ensure the user has selected a city first
+        if 'selected_city' not in context.user_data:
+            await update.message.reply_text("❌ لطفاً شهرتون انتخاب کنید!")
+            await start_city_selection(update, context)
+            return
 
-        # Send a waiting message to inform the user about the ongoing analysis
-        await update.message.reply_text("⏳ در حال پردازش تصویر شما...\nلطفاً چند لحظه صبر کنید.")
+        # Proceed with photo handling logic
+        selected_city = context.user_data['selected_city']
+        await update.message.reply_text(f"شهر انتخابی شما: {city_mapper.get_farsi_name(selected_city)}\n⏳ در حال پردازش تصویر شما...")
+
 
         try:
             # Download the user's photo
@@ -62,7 +71,7 @@ class FlowerBot:
                 return
 
             # Use the API to analyze the image and get plant info
-            plants_info = self.recommendation_service.analyze_image(uploaded_path)
+            plants_info = self.recommendation_service.analyze_image(uploaded_path , selected_city)
 
             if plants_info['error'] is not None:
                 raise Exception(plants_info['error'])
@@ -120,6 +129,7 @@ def main() -> None:
 
         # Add handlers
         app.add_handler(CommandHandler("start", bot.start_command))
+        app.add_handler(CallbackQueryHandler(handle_city_selection, pattern="^(city_page:|select_city:)"))
         app.add_handler(MessageHandler(filters.PHOTO, bot.handle_photo))
         app.add_error_handler(error_handler)
 
