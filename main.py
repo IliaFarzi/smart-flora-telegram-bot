@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 from model import MetisUploader, MetisSuggestion
 from city import start_city_selection, handle_city_selection, city_mapper
+from iran_time import IranTime
 
 # Load environment variables
 load_dotenv()
@@ -16,6 +17,8 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+iran_time = IranTime()
 
 
 # Configuration
@@ -72,7 +75,9 @@ class FlowerBot:
                 return
 
             # Use the API to analyze the image and get plant info
-            plants_info = self.recommendation_service.analyze_image(uploaded_path, selected_city)
+            plants_info = self.recommendation_service.analyze_image(uploaded_path, selected_city,
+                                                                    iran_time.get_current_hour_am_pm(),
+                                                                    iran_time.get_current_month_name(), )
 
             if plants_info['error'] is not None:
                 raise Exception(plants_info['error'])
