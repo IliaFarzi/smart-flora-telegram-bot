@@ -82,7 +82,7 @@ class MetisSuggestion:
         prompt = (
             f"According to the provided image's captured in {hour} lighting conditions(should be inferred form clues from image and time of image capture) and available space, "
             "recommend two indoor plants based on these criteria:\n"
-            f"0. Keep in mind we this picture is taken in {month} so suggest plant should be according to session and climate of region especially if needed for outdoor\n"
+            f"0. Keep in mind we this picture is taken in {month} so suggest plant should be according to season and climate of region especially if needed for outdoor\n"
             f"1. Plants should be suitable for indoor/outdoor environments(based on observation of image)  and compatible with {selected_city}'s climate and regional biomes.\n"
             "2. Avoid recommending any illegal plants.\n\n"
             "Output in JSON format with the following structure:\n"
@@ -93,7 +93,7 @@ class MetisSuggestion:
             "    {\n"
             "      \"scientificName\": \"Example plant name\",\n"
             "      \"persianCommonName\": \"اسم فارسی\",\n"
-            "      \"description\": \"Detailed care instructions in Persian. and some clause on why this plant is suitable for situation, if a date s mentioned here should be in Jalali format and Farsi\""
+            "      \"description\": \"Detailed care instructions in Persian. and some clause on why this plant is suitable for situation, if a date is mentioned here should be in Jalali format and Farsi\""
             "    }\n"
             "  ],\n"
             "  \"error\": null\n"
