@@ -4,6 +4,10 @@ import requests
 from dotenv import load_dotenv
 import logging
 
+from iran_time import IranTime
+
+iran_time = IranTime()
+
 load_dotenv()
 # Configure logging
 logging.basicConfig(
@@ -16,6 +20,7 @@ logger = logging.getLogger(__name__)
 PROXY = {
     "http": os.getenv('HTTP_IR_PROXY'),
 }
+
 
 class MetisUploader:
     def __init__(self):
@@ -40,7 +45,8 @@ class MetisUploader:
                     "files": file,
                 }
 
-                response = requests.post(self.storage_endpoint, headers=headers, files=files, proxies=PROXY,verify=False)
+                response = requests.post(self.storage_endpoint, headers=headers, files=files, proxies=PROXY,
+                                         verify=False)
 
                 if response.status_code == 200:
                     response_data = response.json()
@@ -71,13 +77,13 @@ class MetisSuggestion:
             logger.error("Metis Bot ID is missing. Please check your .env file.")
             raise ValueError("Metis Bot ID is missing.")
 
-    def analyze_image(self, image_url: str,selected_city: str):
+    def analyze_image(self, image_url: str, selected_city: str, hour: str, month: str):
         """Send the image URL to Metis API for plant analysis and get recommendations."""
         prompt = (
-            "According to the provided image's lighting conditions and available space, "
+            f"According to the provided image's captured in {hour} lighting conditions(should be inferred form clues from image and time of image capture) and available space, "
             "recommend two indoor plants based on these criteria:\n"
-            # "1. Plants should be easy to find and not rare.\n"
-            f"1. Plants should be suitable for indoor environments and compatible with {selected_city}'s climate and regeonal biomes.\n"
+            f"0. Keep in mind we this picture is taken in {month} so suggest plant should be according to season and climate of region especially if needed for outdoor\n"
+            f"1. Plants should be suitable for indoor/outdoor environments(based on observation of image)  and compatible with {selected_city}'s climate and regional biomes.\n"
             "2. Avoid recommending any illegal plants.\n\n"
             "Output in JSON format with the following structure:\n"
             "   - *Note:* If the image is other than a place where a plant can be placed, "
@@ -87,7 +93,7 @@ class MetisSuggestion:
             "    {\n"
             "      \"scientificName\": \"Example plant name\",\n"
             "      \"persianCommonName\": \"اسم فارسی\",\n"
-            "      \"description\": \"Detailed care instructions in Persian. and some clause on why this plant is suitable for situation\""
+            "      \"description\": \"Detailed care instructions in Persian. and some clause on why this plant is suitable for situation, if a date is mentioned here should be in Jalali format and Farsi\""
             "    }\n"
             "  ],\n"
             "  \"error\": null\n"
@@ -107,7 +113,8 @@ class MetisSuggestion:
 
         try:
             # Initiate session
-            session_response = requests.post(self.wrapper_endpoint, headers=headers, json=session_data, proxies=PROXY, verify=False)
+            session_response = requests.post(self.wrapper_endpoint, headers=headers, json=session_data, proxies=PROXY,
+                                             verify=False)
             session_response.raise_for_status()
             session_id = session_response.json()['id']
             if not session_id:
@@ -165,7 +172,8 @@ if __name__ == "__main__":
     image_url = uploader.upload_file('uploads/photo_5846132522528916670_y.jpg')
     if image_url:
         suggestion = MetisSuggestion()
-        res = suggestion.analyze_image(image_url, 'Tehran')
+        res = suggestion.analyze_image(image_url, 'Tehran', iran_time.get_current_hour_am_pm(),
+                                       iran_time.get_current_month_name(), )
         print(res)
     else:
         print("Image upload failed.")
