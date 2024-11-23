@@ -85,7 +85,7 @@ class MetisSuggestion:
             f"0. Keep in mind we this picture is taken in {month} so suggest plant should be according to season and climate of region especially if needed for outdoor\n"
             f"1. Plants should be suitable for indoor/outdoor environments(based on observation of image)  and compatible with {selected_city}'s climate and regional biomes.\n"
             "2. Avoid recommending any illegal plants.\n\n"
-            "3. If picture is take from indoor environments lighting with respect to time of day and space available should be emphasize for result if picture is tae from outdoor environments climate and regional biomes and season should be emphasized.\n\n"
+            "3. If picture is take from indoor environments lighting with respect to time of day and space available should be emphasize more for suggested plants if picture is taken from outdoor environments climate and regional biomes and season should be emphasized more.\n\n"
             "Output in JSON format with the following structure:\n"
             "   - *Note:* If the image is other than a place where a plant can be placed, "
             "you should return {\"error\": \"badImage\", \"plants\":[] }.\n\n"
