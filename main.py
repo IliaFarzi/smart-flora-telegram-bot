@@ -1,5 +1,5 @@
 import logging
-from telegram import Update, InputFile
+from telegram import Update, InputFile, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from pathlib import Path
 import os
@@ -60,16 +60,71 @@ class FlowerBot:
             await start_city_selection(update, context)
             return
 
-        selected_city = context.user_data['selected_city']
-        await update.message.reply_text(
-            f"شهر انتخابی شما: {city_mapper.get_farsi_name(selected_city)}\n⏳ در حال پردازش تصویر شما...")
-
         try:
             # Download the user's photo
             photo = update.message.photo[-1]  # Get the highest resolution photo
             file = await photo.get_file()
             file_path = config.TEMP_DIR / f"{file.file_id}.jpg"
             await file.download_to_drive(file_path)
+
+            # Store the file path temporarily in user data
+            context.user_data['uploaded_file_path'] = file_path
+
+            # Prompt user for indoor/outdoor selection
+            await self.ask_environment_choice(update, context)
+
+        except Exception as e:
+            logger.error(f"Error in handle_photo: {e}")
+            await update.message.reply_text(
+                "❌ متأسفانه خطایی رخ داده\n"
+                "🙏 لطفاً دوباره تلاش کنید"
+            )
+
+    async def ask_environment_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Prompt the user to choose between indoor and outdoor."""
+        question = "فضای مد نظرتون رو انتخاب کنید:"
+        options = [
+            InlineKeyboardButton("سرباز", callback_data="environment:outdoor"),
+            InlineKeyboardButton("سرپوشیده", callback_data="environment:indoor"),
+        ]
+        keyboard = InlineKeyboardMarkup([options])
+        await update.message.reply_text(question, reply_markup=keyboard)
+
+    async def handle_environment_choice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle the user's choice for environment."""
+        query = update.callback_query
+        await query.answer()  # Acknowledge the callback
+
+        # Extract the choice
+        choice = query.data.split(":")[1]  # "outdoor" or "indoor"
+        context.user_data['environment'] = choice
+
+        # Log the user's choice
+        logger.info(f"User selected environment: {choice}")
+
+        # Confirm the choice
+        await query.edit_message_text(
+            f"✅ انتخاب شما: {'سرباز' if choice == 'outdoor' else 'سرپوشیده'}"
+        )
+
+        # Notify the user and proceed with image analysis
+        selected_city = context.user_data['selected_city']
+        await query.message.reply_text(
+            f"شهر انتخابی شما: {city_mapper.get_farsi_name(selected_city)}\n⏳ در حال پردازش تصویر شما..."
+        )
+        await self.analyze_uploaded_image(query.message, context)
+
+    async def analyze_uploaded_image(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Analyze the uploaded image based on user inputs."""
+        try:
+            file_path = context.user_data.get('uploaded_file_path')
+            environment = context.user_data.get('environment')
+            selected_city = context.user_data.get('selected_city')
+
+            if not file_path or not environment:
+                raise ValueError("Missing file or environment information.")
+
+            # Upload the file
             uploaded_path = self.uploader_service.upload_file(str(file_path))
 
             if not uploaded_path:
@@ -143,6 +198,7 @@ def main() -> None:
         app.add_handler(CommandHandler("city", bot.city_change_command))
         app.add_handler(CallbackQueryHandler(handle_city_selection, pattern="^(city_page:|select_city:)"))
         app.add_handler(MessageHandler(filters.PHOTO, bot.handle_photo))
+        app.add_handler(CallbackQueryHandler(bot.handle_environment_choice, pattern="^environment:"))
         app.add_error_handler(error_handler)
 
         # Start the bot
