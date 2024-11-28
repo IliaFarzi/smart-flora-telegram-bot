@@ -47,7 +47,6 @@ class FlowerBot:
         await update.message.reply_text(welcome_message)
         await start_city_selection(update, context)
 
-
     async def city_change_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle the /city_hange command"""
         await start_city_selection(update, context)
@@ -107,12 +106,8 @@ class FlowerBot:
             f"✅ انتخاب شما: {'سرباز' if choice == 'outdoor' else 'سرپوشیده'}"
         )
 
-        # Notify the user and proceed with image analysis
-        selected_city = context.user_data['selected_city']
-        await query.message.reply_text(
-            f"شهر انتخابی شما: {city_mapper.get_farsi_name(selected_city)}\n⏳ در حال پردازش تصویر شما..."
-        )
-        await self.analyze_uploaded_image(query.message, context)
+        # Pass the original update object to analyze_uploaded_image
+        await self.analyze_uploaded_image(update, context)
 
     async def analyze_uploaded_image(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Analyze the uploaded image based on user inputs."""
@@ -128,15 +123,30 @@ class FlowerBot:
             uploaded_path = self.uploader_service.upload_file(str(file_path))
 
             if not uploaded_path:
-                await update.message.reply_text("❌ متأسفانه در آپلود تصویر مشکلی پیش آمده\n🙏 لطفاً دوباره تلاش کنید")
+                await context.bot.send_message(chat_id=update.effective_chat.id,
+                                               text="❌ متأسفانه در آپلود تصویر مشکلی پیش آمده\n🙏 لطفاً دوباره تلاش کنید")
                 return
 
+            # Notify the user and proceed with image analysis
+            selected_city = context.user_data['selected_city']
+            waiting_message = await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"شهر انتخابی شما: {city_mapper.get_farsi_name(selected_city)}\n⏳ در حال پردازش تصویر شما..."
+            )
             # Use the API to analyze the image and get plant info
             plants_info = self.recommendation_service.analyze_image(uploaded_path, selected_city,
                                                                     iran_time.get_current_hour_am_pm(),
                                                                     iran_time.get_current_month_name(), )
+            await context.bot.delete_message(
+                chat_id=update.effective_chat.id,
+                message_id=waiting_message.message_id
+            )
 
             if plants_info['error'] is not None:
+                await context.bot.delete_message(
+                    chat_id=update.effective_chat.id,
+                    message_id=waiting_message.message_id
+                )
                 raise Exception(plants_info['error'])
 
             # Prepare the caption for the default image
@@ -147,21 +157,28 @@ class FlowerBot:
                     f"🌿 نام فارسی: {item['persianCommonName']}\n"
                     f"📝 توضیحات: {item['description']}"
                 )
+
                 # Send the default image with the plant info as the caption
                 if config.DEFAULT_IMAGE_PATH.exists():
                     with config.DEFAULT_IMAGE_PATH.open("rb") as image_file:  # Open the file in binary mode
-                        await update.message.reply_photo(
+                        await context.bot.send_photo(
+                            chat_id=update.effective_chat.id,
                             photo=InputFile(image_file),
                             caption=response_message
                         )
                 else:
-                    await update.message.reply_text(response_message)
+                    await context.bot.send_message(
+                        chat_id=update.effective_chat.id, text=response_message)
 
         except Exception as e:
+            await context.bot.delete_message(
+                chat_id=update.effective_chat.id,
+                message_id=waiting_message.message_id
+            )
             logger.error(f"Error in handle_photo: {e}")
-            await update.message.reply_text(
-                "❌ متأسفانه خطایی رخ داده\n"
-                "🙏 لطفاً دوباره تلاش کنید"
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id, text="❌ متأسفانه خطایی رخ داده\n"
+                                                       "🙏 لطفاً دوباره تلاش کنید"
             )
         finally:
             # Clean up the temporary file
@@ -169,7 +186,8 @@ class FlowerBot:
                 file_path.unlink(missing_ok=True)
 
             # Ensure that the bot is ready for the next interaction (commands or messages)
-            await update.message.reply_text("🛠️ آماده دریافت دستور جدید.")
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id, text="🛠️ آماده دریافت دستور جدید.")
 
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
