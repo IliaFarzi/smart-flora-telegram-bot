@@ -1,32 +1,20 @@
-# Use official Python image
+# Use official Python images from Docker Hub
 FROM python:3.10-slim
 
-# Set the working directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy only the requirements file first for caching
+# Copy only the requirements file first for efficient caching of dependencies
 COPY requirements.txt .
 
 # Install dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Install necessary system dependencies
-    wget \
-    unzip \
-    xvfb \
-    chromium \
-    chromium-driver \
-    && pip install --no-cache-dir -r requirements.txt \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire application directory
+# Copy the entire application directory structure
 COPY . .
 
-# Set the display environment variable (needed for headless mode in Selenium)
-ENV DISPLAY=:99
-
-# Expose port 8080 (optional)
+# Expose port 8080 (optional, only if needed for local testing)
 EXPOSE 8080
 
-# Default command to run the application
+# Run the bot
 CMD ["python", "main.py"]

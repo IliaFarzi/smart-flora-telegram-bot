@@ -2,13 +2,11 @@ import logging
 from telegram import Update, InputFile, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 from pathlib import Path
+import os
 from dotenv import load_dotenv
 from model import MetisUploader, MetisSuggestion
 from city import start_city_selection, handle_city_selection, city_mapper
 from iran_time import IranTime
-import os
-from PIL import Image
-from image_scraper import ImageScraper
 
 # Load environment variables
 load_dotenv()
@@ -33,8 +31,6 @@ class Config:
 
 
 config = Config()
-
-
 
 
 class FlowerBot:
@@ -137,25 +133,23 @@ class FlowerBot:
                 chat_id=update.effective_chat.id,
                 text=f"شهر انتخابی شما: {city_mapper.get_farsi_name(selected_city)}\n⏳ در حال پردازش تصویر شما..."
             )
-
             # Use the API to analyze the image and get plant info
             plants_info = self.recommendation_service.analyze_image(uploaded_path, selected_city,
                                                                     iran_time.get_current_hour_am_pm(),
                                                                     iran_time.get_current_month_name(), environment)
-
             await context.bot.delete_message(
                 chat_id=update.effective_chat.id,
                 message_id=waiting_message.message_id
             )
 
             if plants_info['error'] is not None:
-                await context.bot.send_message(
+                await context.bot.delete_message(
                     chat_id=update.effective_chat.id,
-                    text="❌ متأسفانه خطایی رخ داده\n🙏 لطفاً دوباره تلاش کنید"
+                    message_id=waiting_message.message_id
                 )
-                return
+                raise Exception(plants_info['error'])
 
-            # Now for each plant, try to download its image
+            # Prepare the caption for the default image
             for item in plants_info['plants']:
                 response_message = (
                     f"🪴 اطلاعات گیاه پیشنهادی:\n"
@@ -164,49 +158,17 @@ class FlowerBot:
                     f"📝 توضیحات: {item['description']}"
                 )
 
-                # Try to fetch the image for the scientific name
-                try:
-                    image_scraper = ImageScraper()
-                    image_path = image_scraper.fetch_image(item['scientificName'], output_dir="./temp_images")
-
-                    # Convert the image to PNG
-                    with Image.open(image_path) as img:
-                        img = img.convert('RGB')  # Ensure the image is in RGB mode
-                        png_path = image_path.replace(".jpg", ".png")
-                        img.save(png_path, format='PNG')
-
-                    # Send the PNG image with the plant info as caption
-                    with open(png_path, "rb") as image_file:
+                # Send the default image with the plant info as the caption
+                if config.DEFAULT_IMAGE_PATH.exists():
+                    with config.DEFAULT_IMAGE_PATH.open("rb") as image_file:  # Open the file in binary mode
                         await context.bot.send_photo(
                             chat_id=update.effective_chat.id,
                             photo=InputFile(image_file),
                             caption=response_message
                         )
-
-                    # Clean up the image file after sending
-                    os.remove(png_path)
-
-                except Exception as e:
-                    # In case of any error, send the default image
+                else:
                     await context.bot.send_message(
-                        chat_id=update.effective_chat.id, text=response_message
-                    )
-                    if config.DEFAULT_IMAGE_PATH.exists():
-                        with config.DEFAULT_IMAGE_PATH.open("rb") as image_file:  # Open the file in binary mode
-                            await context.bot.send_photo(
-                                chat_id=update.effective_chat.id,
-                                photo=InputFile(image_file),
-                                caption=response_message
-                            )
-                    else:
-                        await context.bot.send_message(
-                            chat_id=update.effective_chat.id, text="❌ متأسفانه تصویر پیش‌فرض یافت نشد"
-                        )
-
-                finally:
-                    # Clean up the temporary image if it exists
-                    if os.path.exists(image_path):
-                        os.remove(image_path)
+                        chat_id=update.effective_chat.id, text=response_message)
 
         except Exception as e:
             await context.bot.delete_message(
