@@ -77,15 +77,14 @@ class MetisSuggestion:
             logger.error("Metis Bot ID is missing. Please check your .env file.")
             raise ValueError("Metis Bot ID is missing.")
 
-    def analyze_image(self, image_url: str, selected_city: str, hour: str, month: str):
-        """Send the image URL to Metis API for plant analysis and get recommendations."""
+    def analyze_image(self, image_url: str, selected_city: str, hour: str, month: str, environment: str):
         prompt = (
-            f"According to the provided image's captured in {hour} lighting conditions(should be inferred form clues from image and time of image capture) and available space, "
-            "recommend two indoor plants based on these criteria:\n"
-            f"0. Keep in mind we this picture is taken in {month} so suggest plant should be according to season and climate of region especially if needed for outdoor\n"
-            f"1. Plants should be suitable for indoor/outdoor environments(based on observation of image)  and compatible with {selected_city}'s climate and regional biomes.\n"
-            "2. Avoid recommending any illegal plants.\n\n"
-            "3. If picture is take from indoor environments lighting with respect to time of day and space available should be emphasize more for suggested plants if picture is taken from outdoor environments climate and regional biomes and season should be emphasized more.\n\n"
+            f"According to the provided image's captured in {hour} in {selected_city},Iran\n"
+            f"recommend two {environment} plants based on these criteria:\n"
+            f"0. Keep in mind this picture is taken in {month} so suggested plant should be according to season\n"
+            f"1. Plants should be suitable for {environment} and compatible with {selected_city}'s climate and regional biomes.\n"
+            f"2. {'Lighting(should be inferred form clues from image like windows) with respect to time of day image is taken and space available should be emphasized for suggested plants' if environment == 'indoor' else 'Climate, regional biome and season should be emphasized for suggested plants'}.\n"
+            "3. Avoid recommending any illegal plants.\n\n"
             "Output in JSON format with the following structure:\n"
             "   - *Note:* If the image is other than a place where a plant can be placed, "
             "you should return {\"error\": \"badImage\", \"plants\":[] }.\n\n"
@@ -102,6 +101,7 @@ class MetisSuggestion:
             "   - *critical note:* response is invalid if it is wrapped in ```{any language}```, and some thing like ```json``` should not be used in response"
 
         )
+        """Send the image URL to Metis API for plant analysis and get recommendations."""
 
         session_data = {
             "botId": self.metis_bot_id,
