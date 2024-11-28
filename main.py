@@ -45,6 +45,8 @@ class FlowerBot:
             "🌿 کافیه یک عکس از فضای مورد نظرتون برای قرار دادن گیاه ارسال کنید\n"
             "من بهترین پیشنهادها رو براتون آماده می‌کنم! 🪴")
         await update.message.reply_text(welcome_message)
+        await start_city_selection(update, context)
+
 
     async def city_change_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle the /city_hange command"""
