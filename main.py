@@ -136,7 +136,7 @@ class FlowerBot:
             # Use the API to analyze the image and get plant info
             plants_info = self.recommendation_service.analyze_image(uploaded_path, selected_city,
                                                                     iran_time.get_current_hour_am_pm(),
-                                                                    iran_time.get_current_month_name(), )
+                                                                    iran_time.get_current_month_name(), environment)
             await context.bot.delete_message(
                 chat_id=update.effective_chat.id,
                 message_id=waiting_message.message_id
