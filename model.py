@@ -174,7 +174,7 @@ if __name__ == "__main__":
     if image_url:
         suggestion = MetisSuggestion()
         res = suggestion.analyze_image(image_url, 'Tehran', iran_time.get_current_hour_am_pm(),
-                                       iran_time.get_current_month_name(), )
+                                       iran_time.get_current_month_name(), environment='indoor')
         print(res)
     else:
         print("Image upload failed.")
